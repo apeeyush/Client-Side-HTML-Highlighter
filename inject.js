@@ -1,20 +1,24 @@
-$(document).ready(function(){
-  $("body").mouseup(function(){
-    selc();
-  });
-});
+var xpath;
+
+chrome.runtime.onMessage.addListener(
+    function (request, sender, sendResponse) {
+        if (request.mssg == "giveXPath") {
+            selc();
+            sendResponse({ XPath: xpath });
+        }
+    });
 
 function selc() {
     var selction  = window.getSelection();
     var text = selction.toString();
-    if(text.length != 0){
+    if(text.length > 0){
         var range = selction.getRangeAt(0);
-        alert(makeXPath(range.startContainer));
+        xpath = makeXPath(range.startContainer);
     };
 };
 
 function makeXPath (node, currentPath) {
-  /* this should suffice in HTML documents for selectable nodes, XML with namespaces needs more code */
+   //this should suffice in HTML documents for selectable nodes, XML with namespaces needs more code 
   currentPath = currentPath || '';
   switch (node.nodeType) {
     case 3:
