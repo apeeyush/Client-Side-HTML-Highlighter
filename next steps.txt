@@ -1,1 +1,2 @@
-1. creating some function which stores 4 xpaths for particular selection for a particular url.
+1. make something to appear next to selected portion giving options to highlight.
+2. creating some function which stores 4 xpaths for particular selection for a particular url.
