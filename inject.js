@@ -1,21 +1,29 @@
-var xpath;
+var returnXPaths = {
+    startContainer:"",
+    startOffset:"",
+    endContainer:"",
+    endOffset:""
+};
 
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
         if (request.mssg == "giveXPath") {
-            selc();
-            sendResponse({ XPath: xpath });
+            updateReturnXPaths();
+            sendResponse({ reply: JSON.stringify(returnXPaths) });
         }
     });
 
-function selc() {
+function updateReturnXPaths() {
     var selction  = window.getSelection();
     var text = selction.toString();
     if(text.length > 0){
         var range = selction.getRangeAt(0);
-        xpath = makeXPath(range.startContainer);
+        returnXPaths.startContainer = makeXPath(range.startContainer);
+        returnXPaths.startOffset = range.startOffset;
+        returnXPaths.endContainer = makeXPath(range.endContainer);
+        returnXPaths.endOffset = range.endOffset;
     }
-    else xpath = null;
+    else returnXPaths = null;
 };
 
 function makeXPath (node, currentPath) {
