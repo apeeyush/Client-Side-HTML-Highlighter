@@ -14,7 +14,8 @@ function selc() {
     if(text.length > 0){
         var range = selction.getRangeAt(0);
         xpath = makeXPath(range.startContainer);
-    };
+    }
+    else xpath = null;
 };
 
 function makeXPath (node, currentPath) {
