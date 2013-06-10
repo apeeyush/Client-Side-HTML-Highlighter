@@ -4,7 +4,7 @@ $(document).ready(code);
 
 function code() {
     $("img#highlight").click(function () {
-        sendMssg();
+        requestXPaths();
     });
 
     $("img#recall").click(function () {
@@ -16,10 +16,10 @@ function code() {
         tabID = tab.id;
     });
 
-    function sendMssg() {
+    function requestXPaths() {
         chrome.tabs.sendMessage(tabID, { mssg: "giveXPath" }, function (response) {
-            alert(response.XPath);
-            localStorage.setItem(tabURL, response.XPath);
+            alert(response.reply);
+            //localStorage.setItem(tabURL, response.XPath);
         });
     };
 
