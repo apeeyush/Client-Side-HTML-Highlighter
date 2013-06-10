@@ -19,7 +19,6 @@ function code() {
         chrome.tabs.sendMessage(tabID, { mssg: "giveXPath" }, function (response) {
             //alert(response.reply);
             //localStorage.removeItem(tabURL);
-            localStorage.re
             if(response.reply != "null")addToStorage(response.reply);
             //localStorage.setItem(tabURL, response.XPath);
         });
