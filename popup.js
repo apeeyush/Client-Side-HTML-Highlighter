@@ -9,6 +9,9 @@ function code() {
 
     chrome.tabs.getSelected(null, function (tab) {
         tabURL = tab.url;
+        if (tabURL.indexOf("#") != -1) {
+            tabURL = tabURL.substring(0, tabURL.indexOf("#"));
+        }
         tabID = tab.id;
     });
 
@@ -16,6 +19,7 @@ function code() {
         chrome.tabs.sendMessage(tabID, { mssg: "giveXPath" }, function (response) {
             //alert(response.reply);
             //localStorage.removeItem(tabURL);
+            localStorage.re
             if(response.reply != "null")addToStorage(response.reply);
             //localStorage.setItem(tabURL, response.XPath);
         });
