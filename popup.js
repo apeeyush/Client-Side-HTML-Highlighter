@@ -15,7 +15,8 @@ function code() {
     function requestXPaths() {
         chrome.tabs.sendMessage(tabID, { mssg: "giveXPath" }, function (response) {
             //alert(response.reply);
-            addToStorage(response.reply);
+            //localStorage.removeItem(tabURL);
+            if(response.reply != "null")addToStorage(response.reply);
             //localStorage.setItem(tabURL, response.XPath);
         });
     };
@@ -33,11 +34,11 @@ function code() {
         var i  = 1;
         for(key in oldDataObj){
             if(typeof(oldDataObj[key]) != typeof(1)){
-                newDataString += ',' + '"sel' + i + '":' + JSON.stringify(oldDataObj[key]);
+                newDataString += "," + "\"sel" + i + "\":" + JSON.stringify(oldDataObj[key]);
                 i += 1;
             }
         };
-        newDataString += ',' + '"sel' + newDataCount + '":' + JSON.stringify(reply) + '}';
+        newDataString += "," + "\"sel" + newDataCount + "\":" + reply + "}";
         alert(newDataString);
         localStorage.setItem(tabURL, newDataString);
 
