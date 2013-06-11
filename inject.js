@@ -1,6 +1,8 @@
 var pageURL;
 $(document).ready(function () {
     pageURL = window.location.href;
+    //localStorage.setItem(pageURL, 2);
+    //alert(localStorage.getItem(pageURL));
     highlight();
 });
 
@@ -13,7 +15,7 @@ var returnXPaths = {
 
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
-        if (request.mssg == "giveXPath") {
+        if (request.mssg == "addXPath") {
             updateReturnXPaths();
             sendResponse({ reply: JSON.stringify(returnXPaths) });
         }
@@ -52,7 +54,7 @@ function highlight(){
     var dataObj = JSON.parse(localStorage.getItem(pageURL));
     for(key in dataObj){
         if(typeof(dataObj[key] != typeof(1))){
-            upadateHTML(dataObj[key]);
+            updateHTML(dataObj[key]);
         };
     };
 };
@@ -65,7 +67,7 @@ function updateHTML(sel){
 
 function makeNewHTML(oldCode, sel){
     var oldCodeCopy = oldCode;
-    var newCode = "", piece1 = "", piece2 = "", piece3 = "";
+    var piece1 = "", piece2 = "", piece3 = "";
     makePiece(oldCode, sel.startContainer, sel.startOffset, piece1, piece2);
     makePiece(oldCodeCopy, sel.endContainer, sel.endOffset, piece2, piece3);
     piece2 = piece2.substring(piece1.length);
@@ -74,9 +76,21 @@ function makeNewHTML(oldCode, sel){
     while(piece2.length > 0){
         if(piece2.indexOf("<") != -1){
             var ch = piece2.charAt(piece2.indexOf("<")+1);
-            
+            if((ch!=' ')&&(ch!='   ')&&(ch!='\n')){
+                newPiece2 += piece2.substring(0, piece2.indexOf("<")) + "</mark>" + piece2.substring(piece2.indexOf("<"),piece2.indexOf(">")+1) + "<mark>";
+                piece2 = piece2.substring(piece2.indexOf(">") + 1);
+            }
+            else{
+                newPiece2 += piece2.substring(0, piece2.indexOf("<") + 1);
+                piece2 =  piece2.substring(piece2.indexOf("<") + 1);
+            }
         }
+        else{
+            break;
+        }  
     };
+    newPiece2 += piece2 + "</mark>";
+    return (piece1 + newPiece2 + piece3);
 };
 
 function makePiece(oldCode, startContainer, startOffset, piece1, piece2){
@@ -95,7 +109,7 @@ function makePiece(oldCode, startContainer, startOffset, piece1, piece2){
             oldCode = oldCode.substring(oldCode.search(">") + 1);
             k = k - 1;
         };
-        startContainer = startContainer.substring(0, j + 1);
+        startContainer = startContainer.substring(j + 1);
     };
     piece1 = piece1 + oldCode.substring(0, startOffset);
     oldCode = oldCode.substring(startOffset);
