@@ -68,7 +68,15 @@ function makeNewHTML(oldCode, sel){
     var newCode = "", piece1 = "", piece2 = "", piece3 = "";
     makePiece(oldCode, sel.startContainer, sel.startOffset, piece1, piece2);
     makePiece(oldCodeCopy, sel.endContainer, sel.endOffset, piece2, piece3);
-
+    piece2 = piece2.substring(piece1.length);
+    var newPiece2 = "";
+    newPiece2 += "<mark>";
+    while(piece2.length > 0){
+        if(piece2.indexOf("<") != -1){
+            var ch = piece2.charAt(piece2.indexOf("<")+1);
+            
+        }
+    };
 };
 
 function makePiece(oldCode, startContainer, startOffset, piece1, piece2){
@@ -81,9 +89,8 @@ function makePiece(oldCode, startContainer, startOffset, piece1, piece2){
         k = parseInt(startContainer.substring(i + 1, j));
         while(k>0){
             var tag = (startContainer.substring(1, i)).toLowerCase();
-            var l = "<" + tag;
-            piece1 = piece1 + oldCode.substring(0, oldCode.search(/l/i)); // problem 
-            oldCode = oldCode.substring(oldCode.search("<" + tag));
+            piece1 = piece1 + oldCode.substring(0, (oldCode.toLowerCase()).search("<"+tag)); 
+            oldCode = oldCode.substring((oldCode.toLowerCase()).search("<"+tag));
             piece1 = piece1 + oldCode.substring(0, oldCode.search(">") + 1);
             oldCode = oldCode.substring(oldCode.search(">") + 1);
             k = k - 1;
