@@ -4,11 +4,11 @@ $(document).ready(code);
 
 function code() {
     $("button#highlight").click(function () {
-        requestStoring("highlight");
+        sendMssg("highlight");
     });
 
     $("button#clear").click(function () {
-        requestStoring("clear");
+        sendMssg("clear");
     });
 
     chrome.tabs.getSelected(null, function (tab) {
@@ -19,7 +19,7 @@ function code() {
         tabID = tab.id;
     });
 
-    function requestStoring(message) {
+    function sendMssg(message) {
         chrome.tabs.sendMessage(tabID, { mssg: message }, function (response) {
             
         });
