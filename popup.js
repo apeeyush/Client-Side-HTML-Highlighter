@@ -16,7 +16,7 @@ function code() {
     });
 
     function requestXPaths() {
-        chrome.tabs.sendMessage(tabID, { mssg: "giveXPath" }, function (response) {
+        chrome.tabs.sendMessage(tabID, { mssg: "addXPath" }, function (response) {
             //alert(response.reply);
             //localStorage.removeItem(tabURL);
             if(response.reply != "null")addToStorage(response.reply);
