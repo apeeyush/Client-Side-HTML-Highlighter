@@ -27,7 +27,7 @@
     "content_scripts": [
     {
         "matches":["<all_urls>"],
-        "js": ["jquery-2.0.1.min.js","inj1.js"]
+        "js": ["jquery-2.0.1.min.js","inject.js"]
         }
      ],
 
