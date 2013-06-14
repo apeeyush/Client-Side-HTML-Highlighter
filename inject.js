@@ -11,7 +11,12 @@ $(document).ready(function () {
         pageURL = pageURL.substring(0, pageURL.indexOf("#"));
     };
     node = document.getElementsByTagName("body")[0];
-    getTextMap(); // alert(textLength);
+    var style = document.createElement('link');
+    style.rel = 'stylesheet';
+    style.type = 'text/css';
+    style.href = chrome.extension.getURL('inj.css');
+    (document.head||document.documentElement).appendChild(style);
+    getTextMap(); //alert(textLength);
     //getSpans();
     //synDOMHighlights();
 });
@@ -150,11 +155,112 @@ function syncDOMAll(){
 };
 
 function synDOMHighlights(){
-    alert("synDOMHighlights");
+    unrender();
+    render();
 };
 
 function synLocalData(){
-    alert("synLocalData");
+    //alert("synLocalData");
+};
+
+function unrender(){
+    var textmap = textMap,
+            i = textmap.length - 1,
+            entry, efmNode, efmParent;
+            // 1st pass, remove highlights
+            while (i-- > 0) {
+                entry = textmap[i];
+                efmNode = entry.n.parentNode;
+                if (efmNode && efmNode.className && efmNode.className === 'efm-hi') {
+                    efmNode.parentNode.replaceChild(entry.n, efmNode);
+                }
+            }
+            // 2nd pass, remove highlight parents
+            i = textmap.length - 1;
+            while (i-- > 0) {
+                entry = textmap[i];
+                efmParent = entry.n.parentNode;
+                if (efmNode && efmNode.className && efmParent.className === 'efm-parent') {
+                    while (efmParent.hasChildNodes()) {
+                        efmParent.parentNode.insertBefore(efmParent.firstChild, efmParent);
+                    }
+                    efmParent.parentNode.removeChild(efmParent);
+                }
+            }
+};
+
+function render(){
+    var i = spans.length,
+    span;
+    while (i-- > 0) {
+        span = spans[i];
+        renderSpan(span.start, span.end);
+    }
+};
+
+function renderSpan(iTextStart, iTextEnd){
+    var textmap = textMap,
+            i, iLeft, iRight,
+            iEntry, entry, entryStart, entryText,
+            whitespaces,
+            iNodeTextStart, iNodeTextEnd,
+            efmParentNode, efmNode, efmTextNode;
+
+            // find entry in textmap array (using binary search)
+            iLeft = 0;
+            iRight = textmap.length;
+            while (iLeft < iRight) {
+                i = iLeft + iRight >> 1;
+                if (iTextStart < textmap[i].i) { iRight = i; }
+                else if (iTextStart >= textmap[i + 1].i) { iLeft = i + 1; }
+                else { iLeft = iRight = i; }
+            }
+            iEntry = iLeft;
+            iRight = textmap.length;
+            while (iEntry < iRight) {
+                entry = textmap[iEntry];
+                entryStart = entry.i;
+                entryText = entry.n.nodeValue;
+                iNodeTextStart = iTextStart - entryStart;
+                iNodeTextEnd = Math.min(iTextEnd, textmap[iEntry + 1].i) - entryStart;
+                // remove entry, for creating a new entry reflecting new structure
+                textmap.splice(iEntry, 1);
+                // create parent node which will receive the (up to three) child nodes
+                efmParentNode = document.createElement('span');
+                efmParentNode.className = 'efm-parent';
+                // slice of text before hilighted slice
+                if (iNodeTextStart > 0) {
+                    efmTextNode = document.createTextNode(entryText.substring(0, iNodeTextStart));
+                    efmParentNode.appendChild(efmTextNode);
+                    textmap.splice(iEntry, 0, { i: entryStart, n: efmTextNode });
+                    entryStart += efmTextNode.length;
+                    iEntry++;
+                }
+                // highlighted slice
+                efmNode = document.createElement('span');
+                efmTextNode = document.createTextNode(entryText.substring(iNodeTextStart, iNodeTextEnd));
+                efmNode.appendChild(efmTextNode);
+                efmNode.className = 'efm-hi';
+                efmParentNode.appendChild(efmNode);
+                textmap.splice(iEntry, 0, { i: entryStart, n: efmTextNode });
+                entryStart += efmTextNode.length;
+                iEntry++;
+                // slice of text after hilighted slice
+                if (iNodeTextEnd < entryText.length) {
+                    efmTextNode = document.createTextNode(entryText.substr(iNodeTextEnd));
+                    efmParentNode.appendChild(efmTextNode);
+                    textmap.splice(iEntry, 0, { i: entryStart, n: efmTextNode });
+                    entryStart += efmTextNode.length;
+                    iEntry++;
+                }
+                // replace text node with our efm parent node
+                entry.n.parentNode.replaceChild(efmParentNode, entry.n);
+                // if the match doesn't intersect with the following
+                // index-node pair, this means this match is completed
+                if (iTextEnd <= textmap[iEntry].i) {
+                    break;
+                }
+            }
 };
 
 function normalizeOffset(textNode, offset) {
