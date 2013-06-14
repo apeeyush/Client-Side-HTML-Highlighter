@@ -11,19 +11,23 @@ $(document).ready(function () {
         pageURL = pageURL.substring(0, pageURL.indexOf("#"));
     };
     node = document.getElementsByTagName("body")[0];
-    getTextMap();
+    getTextMap(); // alert(textLength);
+    //getSpans();
+    //synDOMHighlights();
 });
 
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
         if (request.mssg == "highlight") {
-            alert("highlight");
+            highlightSelection();
+            //alert("highlight");
         }
         if (request.mssg == "unhighlight") {
-            alert("unhighlight");
+            //alert("unhighlight");
         }
         if (request.mssg == "clear_all") {
-            alert("clear_all");
+            localStorage.removeItem(pageURL);
+            //alert("clear_all");
         }
         if (request.mssg == "html") {
             alert($("body").html());
@@ -43,8 +47,8 @@ function getTextMap(){
                 iNode += 1;
                 // text: collect and save index-node pair
                 if (child.nodeType === 3) {
-                    textMap.push({ i: textLength, n: child }); alert(textLength+" "+child );
-                    nodeText = child.nodeValue; alert(nodeText);
+                    textMap.push({ i: textLength, n: child }); //alert(textLength+" "+child );
+                    nodeText = child.nodeValue; //alert(nodeText);
                     textLength += nodeText.length;
                 }
                 // element: collect text of child elements,
@@ -60,7 +64,7 @@ function getTextMap(){
                         iNode = 0;
                     }
                 }
-            } alert("hi");
+            } //alert("hi");
             // restore parent's loop state
             if (!stack.length) {
                 break;
@@ -73,4 +77,60 @@ function getTextMap(){
         textMap.push({ i: textLength });
 };
 
+function getSpans(){
+    var spanTextData = localStorage.getItem(pageURL);
+    if(spanTextData == null){
+        spanTextData = "[]";
+        localStorage.setItem(pageURL, spanTextData);
+    };
+    spans = JSON.parse(spanTextData);
+};
+
+function addSpan(start, end){
     
+};
+    
+function highlightSelection(){
+    if (!window.getSelection) { return; }
+    var selection = window.getSelection();
+    if (!selection) { return; }
+    var iRange, range,
+        iTextStart, iTextEnd;
+
+    for (iRange = 0; iRange < selection.rangeCount; iRange++) {
+        range = selection.getRangeAt(iRange);
+        // convert to target container world
+        iTextStart = normalizeOffset(range.startContainer, range.startOffset);
+        iTextEnd = normalizeOffset(range.endContainer, range.endOffset);
+        if (iTextStart >= 0 && iTextStart < iTextEnd) {
+            addSpan(iTextStart, iTextEnd);
+        }
+     }
+       
+     selection.removeAllRanges();
+     syncDOMAll();
+        
+};
+
+function syncDOMAll(){
+    
+};
+
+function normalizeOffset(textNode, offset) {
+    if (textNode.nodeType !== 3) {
+        return -1;
+        }
+     // Find entry in textmap array (using binary search)
+     var textmap = textMap,
+     iEntry = textmap.length,
+     entry;
+     while (iEntry-- > 0) {
+         entry = textmap[iEntry];
+         if (textNode === entry.n) {
+              //alert(entry.i+offset);
+              return entry.i + offset;
+           }
+         }
+     return -1;
+};
+
