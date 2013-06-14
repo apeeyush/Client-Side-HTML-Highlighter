@@ -20,13 +20,16 @@
 		
 	"permissions":[
 		"contextMenus",
-		"tabs"
+		"tabs",
+        "storage"
 	],
 
     "content_scripts": [
     {
         "matches":["<all_urls>"],
-        "js": ["jquery-2.0.1.min.js","inject.js"]
+        "js": ["jquery-2.0.1.min.js","inj1.js"]
         }
-     ]
+     ],
+
+     "web_accessible_resources": ["inj.css"]
 }
