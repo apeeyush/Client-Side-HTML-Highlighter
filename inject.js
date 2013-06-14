@@ -87,7 +87,39 @@ function getSpans(){
 };
 
 function addSpan(start, end){
-    
+            // spans must be ordered
+            // normalize span
+            if (start > end) {
+                var tmp = start;
+                start = end;
+                end = tmp;
+            }
+            start = Math.max(0, start);
+            end = Math.min(textLength, end);
+            if (start === end) { return; }
+            // find insertion point
+            var n = spans.length,
+            i, span,
+            iLeft = 0,
+            iRight = n;//alert(n);
+            while (iLeft < iRight) {
+                i = iLeft + iRight >> 1;
+                if (end < spans[i].start) { iRight = i; }
+                else if (start > spans[i].end) { iLeft = i + 1; }
+                else { iRight = i; }
+            }
+            // merge spans which intersect
+            while (iRight < n) {
+                span = spans[iRight];
+                if (span.start > end) {
+                    break;
+                }
+                start = Math.min(span.start, start);
+                end = Math.max(span.end, end);
+                iRight++;
+            }
+            // insert
+            spans.splice(iLeft, iRight - iLeft, { start: start, end: end });
 };
     
 function highlightSelection(){
@@ -113,7 +145,16 @@ function highlightSelection(){
 };
 
 function syncDOMAll(){
-    
+    synDOMHighlights();
+    synLocalData();
+};
+
+function synDOMHighlights(){
+    alert("synDOMHighlights");
+};
+
+function synLocalData(){
+    alert("synLocalData");
 };
 
 function normalizeOffset(textNode, offset) {
