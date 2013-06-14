@@ -17,8 +17,8 @@ $(document).ready(function () {
     style.href = chrome.extension.getURL('inj.css');
     (document.head||document.documentElement).appendChild(style);
     getTextMap(); //alert(textLength);
-    //getSpans();
-    //synDOMHighlights();
+    getSpans();
+    synDOMHighlights();
 });
 
 chrome.runtime.onMessage.addListener(
@@ -28,10 +28,13 @@ chrome.runtime.onMessage.addListener(
             //alert("highlight");
         }
         if (request.mssg == "unhighlight") {
+            unHighlightSelection();
             //alert("unhighlight");
         }
         if (request.mssg == "clear_all") {
             localStorage.removeItem(pageURL);
+            spans = [];
+            synDOMHighlights();
             //alert("clear_all");
         }
         if (request.mssg == "html") {
@@ -126,6 +129,63 @@ function addSpan(start, end){
             // insert
             spans.splice(iLeft, iRight - iLeft, { start: start, end: end });
 };
+
+function removeSpans(start, end){
+            // spans must be ordered
+            // normalize span
+            if (start > end) {
+                var tmp = start;
+                start = end;
+                end = tmp;
+            }
+            start = Math.max(0, start);
+            end = Math.min(textLength, end);
+            if (start === end) { return; }
+            // find insertion point
+            var n = spans.length,
+            i, span,
+            iLeft = 0,
+            iRight = n;
+            while (iLeft < iRight) {
+                i = iLeft + iRight >> 1;
+                if (end <= spans[i].start) { iRight = i; }
+                else if (start >= spans[i].end) { iLeft = i + 1; }
+                else { iRight = i; }
+            }
+            // exclude spans which intersect
+            var toremove_start,
+            toremove_end;
+            while (iRight < n) {
+                span = spans[iRight];
+                if (span.start > end) {
+                    break;
+                }
+                toremove_start = Math.max(span.start, start);
+                toremove_end = Math.min(span.end, end);
+                // remove span within span
+                if (toremove_start > span.start && toremove_end < span.end) {
+                    spans.splice(iRight + 1, 0, { start: toremove_end, end: span.end });
+                    span.end = toremove_start;
+                    iRight += 2;
+                    n++;
+                }
+                // remove span from start
+                else if (toremove_start === span.start && toremove_end < span.end) {
+                    span.start = toremove_end;
+                    iRight++;
+                }
+                // remove span from end
+                else if (toremove_start > span.start && toremove_end === span.end) {
+                    span.end = toremove_start;
+                    iRight++;
+                }
+                // remove span
+                else {
+                    spans.splice(iRight, 1);
+                    n--;
+                }
+            }
+};
     
 function highlightSelection(){
     if (!window.getSelection) { return; }
@@ -149,6 +209,27 @@ function highlightSelection(){
         
 };
 
+function unHighlightSelection(){
+            if (!window.getSelection) { return; }
+            var selection = window.getSelection();
+            if (!selection) { return; }
+            var iRange, range,
+            iTextStart, iTextEnd;
+            for (iRange = 0; iRange < selection.rangeCount; iRange++) {
+                range = selection.getRangeAt(iRange);
+                // convert to target container world
+                iTextStart = normalizeOffset(range.startContainer, range.startOffset);
+                iTextEnd = normalizeOffset(range.endContainer, range.endOffset);
+                if (iTextStart >= 0 && iTextStart < iTextEnd) {
+                    removeSpans(iTextStart, iTextEnd);
+                }
+            }
+            if (render) {
+                selection.removeAllRanges();
+                syncDOMAll();
+            }
+};
+
 function syncDOMAll(){
     synDOMHighlights();
     synLocalData();
@@ -160,7 +241,8 @@ function synDOMHighlights(){
 };
 
 function synLocalData(){
-    //alert("synLocalData");
+    localStorage.setItem(pageURL, JSON.stringify(spans));
+    //alert(localStorage.getItem(pageURL));
 };
 
 function unrender(){
