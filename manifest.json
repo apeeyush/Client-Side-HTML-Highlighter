@@ -8,14 +8,14 @@
 	"offline_enabled":true,
 	
 	"browser_action":{
-		"default_icon":"butterfly1.png",
+		"default_icon":"16.png",
         "default_popup":"popup.html"
 	},
 	
 	"icons":{
-		"128":"butterfly3.png",
-		 "48":"butterfly2.png",
-		 "16":"butterfly1.png"
+		"128":"128.png",
+		 "48":"48.png",
+		 "16":"16.png"
 	},
 		
 	"permissions":[
@@ -31,5 +31,5 @@
         }
      ],
 
-     "web_accessible_resources": ["inj.css"]
+     "web_accessible_resources": ["inject.css","popup.js"]
 }
