@@ -1,53 +1,57 @@
 var pageURL,
-    textMap = [], //collects text and index node pairs
-    node,         //body node
-    textLength = 0,
-    spans = [];
+    textMap = [],  //map of all nodes with thier lenghts of inner  text
+    bodyNode,          //body node
+    textLength = 0,//total length of all text present in text nodes of webpage
+    spans = [];    //stores the location where to add <span> fo highlighting
 
 
 $(document).ready(function () {
     pageURL = window.location.href;
+    //page url changes as internal link is opened and adds # followed by id of anchor
     if (pageURL.indexOf("#") != -1) {
         pageURL = pageURL.substring(0, pageURL.indexOf("#"));
     };
-    node = document.getElementsByTagName("body")[0];
+    bodyNode = document.getElementsByTagName("body")[0];
+    //injecting css for coloring <span> tag
     var style = document.createElement('link');
     style.rel = 'stylesheet';
     style.type = 'text/css';
-    style.href = chrome.extension.getURL('inj.css');
+    style.href = chrome.extension.getURL('inject.css');
     (document.head||document.documentElement).appendChild(style);
-    getTextMap(); //alert(textLength);
+
+    getTextMap();
     getSpans();
-    synDOMHighlights();
+    synDOMHighlights();  //it highlights old highlights on when page reloads
 });
 
+//for listening to popup page for knowing user's action
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
         if (request.mssg == "highlight") {
             highlightSelection();
-            //alert("highlight");
         }
+
         if (request.mssg == "unhighlight") {
             unHighlightSelection();
-            //alert("unhighlight");
         }
+
         if (request.mssg == "clear_all") {
             localStorage.removeItem(pageURL);
             spans = [];
             synDOMHighlights();
-            //alert("clear_all");
-        }
-        if (request.mssg == "html") {
-            alert($("body").html());
         }
     });
 
+
+
 function getTextMap(){
-    var iNode = 0,
-        nNodes = node.childNodes.length,
-        nodeText,
-        stack=[],
-        child, nChildren,
+    var iNode = 0,                       //index of current node w.r.t. parent node
+        node = bodyNode,
+        nNodes = node.childNodes.length, //no. child nodes in body
+        nodeText,                        //text within a node
+        stack=[],                        //used for going in deeper levels of nodes
+        child,
+        nChildren,
         state;
         for (; ; ) {
             while (iNode < nNodes) {
@@ -55,8 +59,8 @@ function getTextMap(){
                 iNode += 1;
                 // text: collect and save index-node pair
                 if (child.nodeType === 3) {
-                    textMap.push({ i: textLength, n: child }); //alert(textLength+" "+child );
-                    nodeText = child.nodeValue; //alert(nodeText);
+                    textMap.push({ i: textLength, n: child }); 
+                    nodeText = child.nodeValue;
                     textLength += nodeText.length;
                 }
                 // element: collect text of child elements,
@@ -85,15 +89,89 @@ function getTextMap(){
         textMap.push({ i: textLength });
 };
 
+
+
+//fills spans aray with stored data
 function getSpans(){
     var spanTextData = localStorage.getItem(pageURL);
     if(spanTextData == null){
         spanTextData = "[]";
-        localStorage.setItem(pageURL, spanTextData);
     };
     spans = JSON.parse(spanTextData);
 };
+   
+   
+    
+function highlightSelection(){
+    if (!window.getSelection) { return; }
+    var selection = window.getSelection();
+    if (!selection) { return; }
+    var iRange, range,
+        iTextStart, iTextEnd;
 
+    for (iRange = 0; iRange < selection.rangeCount; iRange++) {
+        range = selection.getRangeAt(iRange);
+        // convert to target container world
+        //these will store index of highlighted portion among total text data of page
+        iTextStart = normalizeOffset(range.startContainer, range.startOffset);
+        iTextEnd = normalizeOffset(range.endContainer, range.endOffset);
+        if (iTextStart >= 0 && iTextStart < iTextEnd) {
+            //ading data to spans array
+            addSpan(iTextStart, iTextEnd);
+        }
+     }
+       
+     selection.removeAllRanges();
+     syncDOMAll(); // rehighlighting
+        
+};
+
+
+
+function unHighlightSelection(){
+            if (!window.getSelection) { return; }
+            var selection = window.getSelection();
+            if (!selection) { return; }
+            var iRange, range,
+            iTextStart, iTextEnd;
+            for (iRange = 0; iRange < selection.rangeCount; iRange++) {
+                range = selection.getRangeAt(iRange);
+                // convert to target container world
+                //these will store index of highlighted portion among total text data of page
+                iTextStart = normalizeOffset(range.startContainer, range.startOffset);
+                iTextEnd = normalizeOffset(range.endContainer, range.endOffset);
+                if (iTextStart >= 0 && iTextStart < iTextEnd) {
+                    removeSpans(iTextStart, iTextEnd);
+                }
+            }
+            if (render) {
+                selection.removeAllRanges();
+                syncDOMAll(); //rehighlighting
+            }
+};
+
+
+//it normalizes offests according to whole text of page
+function normalizeOffset(textNode, offset) {
+    if (textNode.nodeType !== 3) {
+        return -1;
+        }
+     // Find entry in textmap array (using binary search)
+     var textmap = textMap,
+     iEntry = textmap.length,
+     entry;
+     while (iEntry-- > 0) {
+         entry = textmap[iEntry];
+         if (textNode === entry.n) {
+              //alert(entry.i+offset);
+              return entry.i + offset;
+           }
+         }
+     return -1;
+};
+
+
+//adds new data to spans array
 function addSpan(start, end){
             // spans must be ordered
             // normalize span
@@ -130,6 +208,9 @@ function addSpan(start, end){
             spans.splice(iLeft, iRight - iLeft, { start: start, end: end });
 };
 
+
+
+//adds new data to spans array
 function removeSpans(start, end){
             // spans must be ordered
             // normalize span
@@ -186,49 +267,8 @@ function removeSpans(start, end){
                 }
             }
 };
-    
-function highlightSelection(){
-    if (!window.getSelection) { return; }
-    var selection = window.getSelection();
-    if (!selection) { return; }
-    var iRange, range,
-        iTextStart, iTextEnd;
 
-    for (iRange = 0; iRange < selection.rangeCount; iRange++) {
-        range = selection.getRangeAt(iRange);
-        // convert to target container world
-        iTextStart = normalizeOffset(range.startContainer, range.startOffset);
-        iTextEnd = normalizeOffset(range.endContainer, range.endOffset);
-        if (iTextStart >= 0 && iTextStart < iTextEnd) {
-            addSpan(iTextStart, iTextEnd);
-        }
-     }
-       
-     selection.removeAllRanges();
-     syncDOMAll();
-        
-};
 
-function unHighlightSelection(){
-            if (!window.getSelection) { return; }
-            var selection = window.getSelection();
-            if (!selection) { return; }
-            var iRange, range,
-            iTextStart, iTextEnd;
-            for (iRange = 0; iRange < selection.rangeCount; iRange++) {
-                range = selection.getRangeAt(iRange);
-                // convert to target container world
-                iTextStart = normalizeOffset(range.startContainer, range.startOffset);
-                iTextEnd = normalizeOffset(range.endContainer, range.endOffset);
-                if (iTextStart >= 0 && iTextStart < iTextEnd) {
-                    removeSpans(iTextStart, iTextEnd);
-                }
-            }
-            if (render) {
-                selection.removeAllRanges();
-                syncDOMAll();
-            }
-};
 
 function syncDOMAll(){
     synDOMHighlights();
@@ -245,32 +285,36 @@ function synLocalData(){
     //alert(localStorage.getItem(pageURL));
 };
 
+
+//it removes all added spans from page
 function unrender(){
     var textmap = textMap,
             i = textmap.length - 1,
-            entry, efmNode, efmParent;
+            entry, Node, Parent;
             // 1st pass, remove highlights
             while (i-- > 0) {
                 entry = textmap[i];
-                efmNode = entry.n.parentNode;
-                if (efmNode && efmNode.className && efmNode.className === 'efm-hi') {
-                    efmNode.parentNode.replaceChild(entry.n, efmNode);
+                Node = entry.n.parentNode;
+                if (Node && Node.className && Node.className === 'hi') {
+                    Node.parentNode.replaceChild(entry.n, Node);
                 }
             }
             // 2nd pass, remove highlight parents
             i = textmap.length - 1;
             while (i-- > 0) {
                 entry = textmap[i];
-                efmParent = entry.n.parentNode;
-                if (efmNode && efmNode.className && efmParent.className === 'efm-parent') {
-                    while (efmParent.hasChildNodes()) {
-                        efmParent.parentNode.insertBefore(efmParent.firstChild, efmParent);
+                Parent = entry.n.parentNode;
+                if (Node && Node.className && Parent.className === '-parent') {
+                    while (Parent.hasChildNodes()) {
+                        Parent.parentNode.insertBefore(Parent.firstChild, Parent);
                     }
-                    efmParent.parentNode.removeChild(efmParent);
+                    Parent.parentNode.removeChild(Parent);
                 }
             }
 };
 
+
+//it adds all spans to page
 function render(){
     var i = spans.length,
     span;
@@ -280,13 +324,15 @@ function render(){
     }
 };
 
+
+
 function renderSpan(iTextStart, iTextEnd){
     var textmap = textMap,
             i, iLeft, iRight,
             iEntry, entry, entryStart, entryText,
             whitespaces,
             iNodeTextStart, iNodeTextEnd,
-            efmParentNode, efmNode, efmTextNode;
+            ParentNode, Node, TextNode;
 
             // find entry in textmap array (using binary search)
             iLeft = 0;
@@ -308,58 +354,40 @@ function renderSpan(iTextStart, iTextEnd){
                 // remove entry, for creating a new entry reflecting new structure
                 textmap.splice(iEntry, 1);
                 // create parent node which will receive the (up to three) child nodes
-                efmParentNode = document.createElement('span');
-                efmParentNode.className = 'efm-parent';
+                ParentNode = document.createElement('span');
+                ParentNode.className = '-parent';
                 // slice of text before hilighted slice
                 if (iNodeTextStart > 0) {
-                    efmTextNode = document.createTextNode(entryText.substring(0, iNodeTextStart));
-                    efmParentNode.appendChild(efmTextNode);
-                    textmap.splice(iEntry, 0, { i: entryStart, n: efmTextNode });
-                    entryStart += efmTextNode.length;
+                    TextNode = document.createTextNode(entryText.substring(0, iNodeTextStart));
+                    ParentNode.appendChild(TextNode);
+                    textmap.splice(iEntry, 0, { i: entryStart, n: TextNode });
+                    entryStart += TextNode.length;
                     iEntry++;
                 }
                 // highlighted slice
-                efmNode = document.createElement('span');
-                efmTextNode = document.createTextNode(entryText.substring(iNodeTextStart, iNodeTextEnd));
-                efmNode.appendChild(efmTextNode);
-                efmNode.className = 'efm-hi';
-                efmParentNode.appendChild(efmNode);
-                textmap.splice(iEntry, 0, { i: entryStart, n: efmTextNode });
-                entryStart += efmTextNode.length;
+                Node = document.createElement('span');
+                TextNode = document.createTextNode(entryText.substring(iNodeTextStart, iNodeTextEnd));
+                Node.appendChild(TextNode);
+                Node.className = 'hi';
+                ParentNode.appendChild(Node);
+                textmap.splice(iEntry, 0, { i: entryStart, n: TextNode });
+                entryStart += TextNode.length;
                 iEntry++;
                 // slice of text after hilighted slice
                 if (iNodeTextEnd < entryText.length) {
-                    efmTextNode = document.createTextNode(entryText.substr(iNodeTextEnd));
-                    efmParentNode.appendChild(efmTextNode);
-                    textmap.splice(iEntry, 0, { i: entryStart, n: efmTextNode });
-                    entryStart += efmTextNode.length;
+                    TextNode = document.createTextNode(entryText.substr(iNodeTextEnd));
+                    ParentNode.appendChild(TextNode);
+                    textmap.splice(iEntry, 0, { i: entryStart, n: TextNode });
+                    entryStart += TextNode.length;
                     iEntry++;
                 }
-                // replace text node with our efm parent node
-                entry.n.parentNode.replaceChild(efmParentNode, entry.n);
+                // replace text node with our  parent node
+                entry.n.parentNode.replaceChild(ParentNode, entry.n);
                 // if the match doesn't intersect with the following
                 // index-node pair, this means this match is completed
                 if (iTextEnd <= textmap[iEntry].i) {
                     break;
                 }
             }
-};
-
-function normalizeOffset(textNode, offset) {
-    if (textNode.nodeType !== 3) {
-        return -1;
-        }
-     // Find entry in textmap array (using binary search)
-     var textmap = textMap,
-     iEntry = textmap.length,
-     entry;
-     while (iEntry-- > 0) {
-         entry = textmap[iEntry];
-         if (textNode === entry.n) {
-              //alert(entry.i+offset);
-              return entry.i + offset;
-           }
-         }
-     return -1;
 };
 
