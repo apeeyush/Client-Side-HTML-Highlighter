@@ -39,12 +39,13 @@ void listInit(list *List1){
         List1->head=(Node *) malloc(sizeof(Node));
         List1->head->value = 0;
         List1->head->next=NULL;
+		List->travPointer=(Node *) malloc(sizeof(Node));
         List1->travPointer=List1->head;
+		List->tail=(Node *) malloc(sizeof(Node));List->tail=(Node *) malloc(sizeof(Node));
         List1->tail=List1->head;
 }
 list* reverse(list* List){
-		list* revList;
-		listInit(revList);
+		list* revList;listInit(revList);
 		List->travPointer = List->head;
         revList->tail->value = List->head->value;
 		revList->tail->next = NULL;
@@ -69,25 +70,25 @@ int addTwoValues(int *carry,int a, int b){
 		}
 }
 
-void add(list* list1,list* list2, list * resList){
+void add(list list1,list list2, list * resList){
         int carry=0;
-        while( (list1->travPointer->next!=NULL)&&(list2->travPointer->next!=NULL) ){
-                addToRight('0'+ addTwoValues(&carry,(int)(list1->travPointer->value-'0'),(int)(list2->travPointer->value-'0') ), resList);
-                list1->travPointer=list1->travPointer->next;
-                list2->travPointer=list2->travPointer->next;
+        while( (list1.travPointer->next!=NULL)&&(list2.travPointer->next!=NULL) ){
+                addToRight('0'+ addTwoValues(&carry,(int)(list1.travPointer->value-'0'),(int)(list2.travPointer->value-'0') ), resList);
+                list1.travPointer=list1.travPointer->next;
+                list2.travPointer=list2.travPointer->next;
         }
         //when second list is greater in length than first one
 
-        if(list1->travPointer->next==NULL){
-				while( list2->travPointer->next!=NULL){
-							addToRight( '0'+ addTwoValues(&carry,0,(int)(list2->travPointer->value-'0') ),resList);
-                            list2->travPointer=list2->travPointer->next;
+        if(list1.travPointer->next==NULL){
+				while( list2.travPointer->next!=NULL){
+							addToRight( '0'+ addTwoValues(&carry,0,(int)(list2.travPointer->value-'0') ),resList);
+                            list2.travPointer=list2.travPointer->next;
 				}
         }
-        if(list2->travPointer->next==NULL){
-				while( list1->travPointer->next!=NULL){
-						addToRight( '0'+ addTwoValues(&carry,0,(int)(list1->travPointer->value-'0') ) ,resList);
-                        list1->travPointer=list1->travPointer->next;
+        if(list2.travPointer->next==NULL){
+				while( list1.travPointer->next!=NULL){
+						addToRight( '0'+ addTwoValues(&carry,0,(int)(list1.travPointer->value-'0') ) ,resList);
+                        list1.travPointer=list1.travPointer->next;
                 }
         }
         if(carry!=0){
@@ -96,10 +97,11 @@ void add(list* list1,list* list2, list * resList){
 }
 
 list* sum(list* List1, list* List2){
-		list *revList1, *revList2, *resultRev;
-		listInit(revList1); listInit(revList2); listInit(resultRev);
-		revList1 = reverse(List1); revList2 = reverse(List2);
-		add( revList1, revList2, resultRev);
+		list *revList1 = reverse(List1), *revList2 = reverse(List2), *resultRev, r, q;
+		//listInit(revList1); listInit(revList2); listInit(resultRev);
+		//revList1 = reverse(List1); revList2 = reverse(List2);
+		r = *revList1; q = *revList2; printf("a");
+		add( r, q, resultRev); printf("a");
 		return reverse(resultRev);	
 }
 
@@ -127,7 +129,7 @@ list* product(list* list1, list* list2){
 			addToRight('0', temp);
 			current = current->next;
 			if(current->value = '1'); 
-				//temp = add(temp, list1);
+				temp = sum(temp, list1);
 		}
 		return temp;
 }
@@ -149,20 +151,18 @@ int main(){
 		list *outputList;
 		listInit(&List1);
 		listInit(&List2);
-        printList(&List1);
 		//inputting
         scanf("%c",&c);
         while( c!='\n'){
            addToRight(c,&List1);                                                                                       
            scanf("%c",&c);
         }
-		putchar('\n');
         scanf("%c",&c);
         while( c!='\n'){
                 addToRight(c,&List2);                                                                                       
                 scanf("%c",&c);
         }
-		
+		printf("s");
 		//adding
 		outputList = sum(&List1, &List2);
 		printf("s");
